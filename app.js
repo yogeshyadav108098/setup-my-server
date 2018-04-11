@@ -25,7 +25,9 @@ Vorpal
         }, function(result) {
             let machine = result.machine || '';
             machine = machine.toLowerCase().trim();
-            self.log('Operating on ', machine);
+
+            self.log(Chalk.underline.green(machine));
+            self.log('Operating according to guideleines of', machine);
 
             if (machinesKnown.indexOf(machine) < 0) {
                 self.log('Do not know about this machine till now');
@@ -54,7 +56,7 @@ Vorpal
                         );
                         return callback(error);
                     }
-                    self.log('Necessary part', Chalk.underline.green(preRequisite.name), 'exists, checking others...');
+                    self.log('Necessary part', Chalk.underline.green(preRequisite.name), 'exists, checking others ...');
                     return callback();
                 });
             }, function(error, result) {
@@ -74,9 +76,9 @@ Vorpal
                     Exec(setUpRequirement.testCommand, function(error, stdout, stderr) {
                         if (!error) {
                             self.log(
-                                'setUp Requiste part',
+                                'setup requisite',
                                 Chalk.underline.green(setUpRequirement.name),
-                                'exists, continue...'
+                                'exists, checking others...'
                             );
                             return callback();
                         }
@@ -84,9 +86,7 @@ Vorpal
                         self.log(
                             'Machine part',
                             Chalk.underline.green(setUpRequirement.name),
-                            'does not exist,',
-                            'Adding using command',
-                            Chalk.underline.bold.red(setUpRequirement.installCommand)
+                            'does not exist, adding ...'
                         );
 
                         Exec(setUpRequirement.installCommand, function(error, stdout, stderr) {
@@ -104,7 +104,7 @@ Vorpal
                             self.log(
                                 'New part',
                                 Chalk.underline.green(setUpRequirement.name),
-                                'added to machine, checking others...'
+                                'added to machine, checking others ...'
                             );
                             return callback();
                         });
@@ -118,6 +118,7 @@ Vorpal
                     systemCommands.softwaresAvailable.forEach(function(software) {
                         softwaresAvailable[software.name] = software;
                     });
+                    self.log('All necessary compatiblity checked, now you can proceed to install');
                     return callback();
                 });
             });
@@ -134,59 +135,48 @@ Vorpal
             return callback();
         }
 
+        Async.eachSeries(softwaresAvailable, function(software, callback) {
+            self.log(Chalk.underline.green(software.name));
 
-        let softwaresAvailableNames = [];
-        Object.keys(softwaresAvailable).forEach(function(software) {
-            softwaresAvailableNames.push(software);
-        });
-
-        self.prompt({
-            type: 'input',
-            name: 'software',
-            message: 'What part you want to add in machine: ' + softwaresAvailableNames.toString() + '? '
-        }, function(result) {
-            let software = result.software || '';
-            software = software.toLowerCase().trim();
-            self.log('You want me to add part', software, 'to your machine');
-
-            if (softwaresAvailableNames.indexOf(software) < 0) {
-                self.log('I do have this part for this machine right now, please try after some days');
-                return callback();
-            }
-
-            self.log('Checking if this part already exists in your machine');
-            Exec(softwaresAvailable[software].testCommand, function(error, stdout, stderr) {
-                if (!error) {
-                    self.log(
-                        'Requested part',
-                        Chalk.underline.green(softwaresAvailable[software].name),
-                        'is already present in this machine'
-                    );
-                    return callback();
-                }
-
-                self.log(softwaresAvailable[software].name, 'does not exist in this machine, installing...');
-                Exec(softwaresAvailable[software].installCommand, function(error, stdout, stderr) {
+            self.log('Adding', software.name, 'to your machine');
+            if (software.testCommand) {
+                self.log('Checking if', software.name, 'already exists in your machine');
+                Exec(software.testCommand, function(error, stdout, stderr) {
+                    self.log(error);
+                    self.log(stdout);
+                    self.log(stderr);
                     if (!error) {
-                        self.log(
-                            Chalk.underline.green(softwaresAvailable[software].name),
-                            'added successfully in this machine'
-                        );
+                        self.log(software.name, 'is already present in this machine');
                         return callback();
                     }
 
-                    self.log(error);
-                    self.log(
-                        'Failed to add',
-                        Chalk.underline.green(softwaresAvailable[software].name),
-                        'try again'
-                    );
+                    self.log(software.name, 'does not exist in this machine, installing...');
+                    Exec(software.installCommand, function(error, stdout, stderr) {
+                        if (!error) {
+                            self.log(software.name, 'added successfully in this machine');
+                            return callback();
+                        }
+
+                        self.log('Failed to add', software.name, 'try again after some time');
+                        return callback();
+                    });
+                });
+            } else {
+                Exec(software.installCommand, function(error, stdout, stderr) {
+                    if (!error) {
+                        self.log(software.name, 'added successfully in this machine');
+                        return callback();
+                    }
+
+                    self.log('Failed to add', software.name, 'try again after some time');
                     return callback();
                 });
-            });
+            }
+        }, function(error, result) {
+            self.log('Your machine looks perfect now');
+            return callback();
         });
     });
-
 
 Vorpal
     .delimiter('mechanic $')
