@@ -21,13 +21,15 @@ Vorpal
         self.prompt({
             type: 'input',
             name: 'machine',
-            message: 'What machine you wants to setup ' + machinesKnown.toString() + '? '
+            message: '\nWhat machine you wants to setup ' + machinesKnown.toString() + '? '
         }, function(result) {
             let machine = result.machine || '';
             machine = machine.toLowerCase().trim();
 
-            self.log(Chalk.underline.green(machine));
-            self.log('Operating according to guideleines of', machine);
+            self.log('\n');
+            self.log('################### ', Chalk.underline.green(machine.toUpperCase()), ' ###################');
+
+            self.log('Operating according to guideleines of', machine, ' ...');
 
             if (machinesKnown.indexOf(machine) < 0) {
                 self.log('Do not know about this machine till now');
@@ -43,20 +45,22 @@ Vorpal
 
             // Check preRequisites
             preRequisites = systemCommands.preRequisites;
-            self.log('Checking necessary parts of machine');
+            let preRequisiteCounter = 1;
+            self.log('Checking necessary parts of machine ...');
             Async.eachSeries(preRequisites, function(preRequisite, callback) {
+                self.log('\n', preRequisiteCounter.toString(), '. ', Chalk.underline.green(preRequisite.name));
+                self.log('\nChecking if', preRequisite.name, 'already exists in your machine ...');
                 Exec(preRequisite.testCommand, function(error, stdout, stderr) {
                     if (error) {
                         self.log(
-                            'Necessary part',
-                            Chalk.underline.green(preRequisite.name),
-                            'does not exist,',
+                            'Does not exist,',
                             'Please add this first using command',
                             Chalk.underline.bold.red(preRequisite.installCommand)
                         );
                         return callback(error);
                     }
-                    self.log('Necessary part', Chalk.underline.green(preRequisite.name), 'exists, checking others ...');
+                    self.log(preRequisite.name, 'is already present in this machine');
+                    preRequisiteCounter += 1;
                     return callback();
                 });
             }, function(error, result) {
@@ -65,21 +69,24 @@ Vorpal
                     return callback();
                 }
 
-                self.log('All necessary parts exists');
+                self.log('\nAll necessary parts exists');
 
-                self.log('Fetching required tools', Emoji.find('wrench').emoji, ' for ', machine);
+                self.log('\nFetching required tools', Emoji.find('wrench').emoji, ' for ', machine, ' ...');
                 setUpRequirements = systemCommands.setUpRequirements;
 
                 // Install setup Requirements
                 self.log('Checking compatiblity of other machine parts with new parts');
+                let setUpRequirementsCounter = 1;
                 Async.eachSeries(setUpRequirements, function(setUpRequirement, callback) {
+                    self.log('\n',
+                        setUpRequirementsCounter.toString(),
+                        '. ',
+                        Chalk.underline.green(setUpRequirement.name)
+                    );
+                    self.log('Checking if', setUpRequirement.name, 'already exists in your machine ...');
                     Exec(setUpRequirement.testCommand, function(error, stdout, stderr) {
                         if (!error) {
-                            self.log(
-                                'setup requisite',
-                                Chalk.underline.green(setUpRequirement.name),
-                                'exists, checking others...'
-                            );
+                            self.log(setUpRequirement.name, 'is already present in this machine');
                             return callback();
                         }
 
@@ -89,23 +96,27 @@ Vorpal
                             'does not exist, adding ...'
                         );
 
+                        self.log('This might take some time ...');
+
                         Exec(setUpRequirement.installCommand, function(error, stdout, stderr) {
                             if (error) {
                                 self.log(
-                                    'New part',
+                                    '\nMachine part',
                                     Chalk.underline.green(setUpRequirement.name),
                                     'is not compatible with this machine,',
                                     'Tried using command',
                                     Chalk.underline.bold.red(setUpRequirement.installCommand),
-                                    'Please report it'
+                                    'Please report it\n'
                                 );
+                                self.log(Chalk.underline.bold.red('Also attach given error'), error);
                                 return callback(error);
                             }
                             self.log(
                                 'New part',
                                 Chalk.underline.green(setUpRequirement.name),
-                                'added to machine, checking others ...'
+                                'added to machine, continuing ...'
                             );
+                            setUpRequirementsCounter += 1;
                             return callback();
                         });
                     });
@@ -118,7 +129,7 @@ Vorpal
                     systemCommands.softwaresAvailable.forEach(function(software) {
                         softwaresAvailable[software.name] = software;
                     });
-                    self.log('All necessary compatiblity checked, now you can proceed to install');
+                    self.log('\nAll necessary compatiblity checked, now you can proceed to install\n');
                     return callback();
                 });
             });
@@ -135,28 +146,42 @@ Vorpal
             return callback();
         }
 
+        let softwareCounter = 1;
         Async.eachSeries(softwaresAvailable, function(software, callback) {
-            self.log(Chalk.underline.green(software.name));
+            self.log('\n', softwareCounter.toString(), '. ', Chalk.underline.green(software.name));
 
-            self.log('Adding', software.name, 'to your machine');
             if (software.testCommand) {
-                self.log('Checking if', software.name, 'already exists in your machine');
+                self.log('Checking if', software.name, 'already exists in your machine ...');
                 Exec(software.testCommand, function(error, stdout, stderr) {
-                    self.log(error);
-                    self.log(stdout);
-                    self.log(stderr);
-                    if (!error) {
+                    if (stdout.toString().indexOf('Good') > -1) {
                         self.log(software.name, 'is already present in this machine');
+                        softwareCounter += 1;
                         return callback();
                     }
 
-                    self.log(software.name, 'does not exist in this machine, installing...');
+                    if (software.testCommand.indexOf('brew ls') > -1) {
+                        if (stdout.indexOf(software.realName) > -1) {
+                            self.log(software.name, 'is already present in this machine --', stdout);
+                            softwareCounter += 1;
+                            return callback();
+                        }
+                    }
+
+                    if (!error) {
+                        self.log(software.name, 'is already present in this machine');
+                        softwareCounter += 1;
+                        return callback();
+                    }
+
+                    self.log(software.name, 'does not exist in this machine, installing ...');
                     Exec(software.installCommand, function(error, stdout, stderr) {
                         if (!error) {
                             self.log(software.name, 'added successfully in this machine');
+                            softwareCounter += 1;
                             return callback();
                         }
 
+                        softwareCounter += 1;
                         self.log('Failed to add', software.name, 'try again after some time');
                         return callback();
                     });
@@ -165,15 +190,17 @@ Vorpal
                 Exec(software.installCommand, function(error, stdout, stderr) {
                     if (!error) {
                         self.log(software.name, 'added successfully in this machine');
+                        softwareCounter += 1;
                         return callback();
                     }
 
+                    softwareCounter += 1;
                     self.log('Failed to add', software.name, 'try again after some time');
                     return callback();
                 });
             }
         }, function(error, result) {
-            self.log('Your machine looks perfect now');
+            self.log('\nYour machine looks perfect now');
             return callback();
         });
     });
