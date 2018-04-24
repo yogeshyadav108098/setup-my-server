@@ -17,9 +17,13 @@ node app
 ```
 
 Then: --->
+
 Step 1:
+```
 mechanic $ setup
 What machine you wants to setup mac,ubuntu? mac
-
+```
 Step 2:
+```
 mechanic $ install
+```
