@@ -1,32 +1,32 @@
 {
-  "name": "setup-my-server",
-  "version": "1.0.0",
-  "description": "Sets up my server for development",
-  "main": "app.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/yogeshyadav108098/setup-my-server.git"
-  },
-  "keywords": [
-    "setup",
-    "server"
-  ],
-  "author": "Yogesh Yadav",
-  "license": "GPL-3.0",
-  "bugs": {
-    "url": "https://github.com/yogeshyadav108098/setup-my-server/issues"
-  },
-  "homepage": "https://github.com/yogeshyadav108098/setup-my-server#readme",
-  "dependencies": {
-    "async": "^2.6.0",
-    "node-emoji": "^1.8.1",
-    "vorpal": "^1.12.0"
-  },
-  "devDependencies": {
-    "eslint": "^4.19.1",
-    "eslint-config-google": "^0.9.1"
-  }
+    "name": "setup-my-server",
+    "version": "1.0.0",
+    "description": "Sets up my server for development",
+    "main": "app.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/yogeshyadav108098/setup-my-server.git"
+    },
+    "keywords": [
+        "setup",
+        "server"
+    ],
+    "author": "Yogesh Yadav",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/yogeshyadav108098/setup-my-server/issues"
+    },
+    "homepage": "https://github.com/yogeshyadav108098/setup-my-server#readme",
+    "dependencies": {
+        "async": "^2.6.0",
+        "node-emoji": "^1.8.1",
+        "vorpal": "^1.12.0"
+    },
+    "devDependencies": {
+        "eslint": "^4.19.1",
+        "eslint-config-google": "^0.9.1"
+    }
 }
