@@ -1,6 +1,6 @@
 {
     "name": "setup-my-server",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Sets up my server for development",
     "main": "app.js",
     "scripts": {
